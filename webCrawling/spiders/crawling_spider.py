@@ -6,8 +6,6 @@ import re
 import requests
 import threading
 
-threads = []
-
 class PapersSpider(scrapy.Spider):
     name = "papers"
     allowed_domains = ["papers.nips.cc"]
@@ -50,11 +48,17 @@ class PapersSpider(scrapy.Spider):
             if "pdf" in link:
                 Path(filename).write_text("https://papers.nips.cc"+link)
                 url = "https://papers.nips.cc"+link
-                thread = threading.Thread(target=downloadPDF, args=(url,filenamePDF))
-                thread.start()
-                threads.append(thread)
- 
-def downloadPDF(url, filenamePDF):
+                self.filenamePDF = filenamePDF
+                next_page = response.urljoin(url)
+                yield scrapy.Request(next_page, callback=self.parseSavePDF)
+
+    def parseSavePDF(self, response):
+        with open(self.filenamePDF, 'wb') as file:
+            file.write(response.body)
+            
+
+# Using Requests
+def downloadPDFUsingRequests(url, filenamePDF):
     response = requests.get(url)
 
     if response.status_code == 200:
@@ -69,5 +73,3 @@ if __name__ =="__main__":
     process = CrawlerProcess()
     process.crawl(PapersSpider)
     process.start()
-    for thread in threads:
-        thread.join()
