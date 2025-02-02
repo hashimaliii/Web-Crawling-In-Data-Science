@@ -4,6 +4,9 @@ from scrapy.crawler import CrawlerProcess
 from pathlib import Path
 import re
 import requests
+import threading
+
+threads = []
 
 class PapersSpider(scrapy.Spider):
     name = "papers"
@@ -47,17 +50,24 @@ class PapersSpider(scrapy.Spider):
             if "pdf" in link:
                 Path(filename).write_text("https://papers.nips.cc"+link)
                 url = "https://papers.nips.cc"+link
+                thread = threading.Thread(target=downloadPDF, args=(url,filenamePDF))
+                thread.start()
+                threads.append(thread)
+ 
+def downloadPDF(url, filenamePDF):
+    response = requests.get(url)
 
-                response = requests.get(url)
+    if response.status_code == 200:
+        with open(filenamePDF, 'wb') as file:
+            file.write(response.content)
+        # print('File downloaded successfully')
+    else:
+        pass
+        # print('Failed to download file')
 
-                if response.status_code == 200:
-                    with open(filenamePDF, 'wb') as file:
-                        file.write(response.content)
-                    # print('File downloaded successfully')
-                else:
-                    pass
-                    # print('Failed to download file')
-
-process = CrawlerProcess()
-process.crawl(PapersSpider)
-process.start()
+if __name__ =="__main__":
+    process = CrawlerProcess()
+    process.crawl(PapersSpider)
+    process.start()
+    for thread in threads:
+        thread.join()
