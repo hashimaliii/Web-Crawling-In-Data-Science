@@ -5,6 +5,7 @@ import fitz
 import json
 from google import genai
 from sentence_transformers import SentenceTransformer
+import crawling_spider
 
 def generate_label(text):
     """Generate a label using Gemini API with predefined categories."""
@@ -62,6 +63,10 @@ def process_directory(directory_path):
     return data
 
 if __name__ == "__main__":
+    process = crawling_spider.CrawlerProcess()
+    process.crawl(crawling_spider.PapersSpider)
+    process.start()
+
     # Gemini QuickStart
     client = genai.Client(api_key="AIzaSyC7xaHYj8wPS5MWDnRhQ34kHvPMShlExMg")
 
